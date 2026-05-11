@@ -15,8 +15,20 @@ dotnet test DotnetPromptToolkit.slnx
 dotnet run --project examples/DotnetPromptToolkit.Examples -- basic
 dotnet run --project examples/DotnetPromptToolkit.Examples -- completion
 dotnet run --project examples/DotnetPromptToolkit.Examples -- layout
+dotnet run --project examples/DotnetPromptToolkit.Examples -- parity document
 ```
+
+## Repeatable Python/C# parity validation
+
+Install the Python reference dependency and run the deterministic comparison scenarios:
+
+```bash
+python -m pip install -r tools/python-requirements.txt
+python tools/validate_examples.py --iterations 3
+```
+
+The validator compares Python `prompt_toolkit` reference outputs with C# example outputs for document, completion, history, formatted-text, and layout scenarios.
 
 ## Status
 
-This repository is not yet at full Python `prompt_toolkit` parity. See [docs/PARITY.md](docs/PARITY.md) for the tracked parity matrix and remaining work.
+This repository is not yet at full Python `prompt_toolkit` parity. See [docs/PARITY.md](docs/PARITY.md) for the tracked parity matrix, the latest audit, and remaining work.

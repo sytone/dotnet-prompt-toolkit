@@ -2,6 +2,9 @@
   <Folder Name="/examples/">
     <Project Path="examples/DotnetPromptToolkit.Examples/DotnetPromptToolkit.Examples.csproj" />
   </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/EchoSample/EchoSample.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/DotnetPromptToolkit/DotnetPromptToolkit.csproj" />
   </Folder>

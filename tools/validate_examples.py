@@ -13,7 +13,23 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLE_PROJECT = ROOT / "examples" / "DotnetPromptToolkit.Examples" / "DotnetPromptToolkit.Examples.csproj"
 PYTHON_REFERENCE = ROOT / "tools" / "python_reference_examples.py"
-SCENARIOS = ("document", "completion", "history", "formatted-text", "layout")
+SCENARIOS = (
+    "document",
+    "completion",
+    "fuzzy-completion",
+    "nested-completion",
+    "history",
+    "formatted-text",
+    "html",
+    "ansi",
+    "layout",
+    "search",
+    "auto-suggest",
+    "named-colors",
+    "grammar",
+    "progress-bar",
+    "frame",
+)
 
 
 def run(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -26,34 +42,34 @@ def parse_json_output(label: str, completed: subprocess.CompletedProcess[str]) -
             f"{label} failed with exit code {completed.returncode}\n"
             f"STDOUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}"
         )
+    # The .NET runner may print MSBuild status lines before our JSON; take last JSON line.
+    lines = [line for line in completed.stdout.splitlines() if line.strip()]
+    if not lines:
+        raise RuntimeError(f"{label} produced no output")
+    last = lines[-1]
     try:
-        return json.loads(completed.stdout)
+        return json.loads(last)
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"{label} did not emit valid JSON. Output:\n{completed.stdout}") from exc
 
 
-def validate_scenario(scenario: str, configuration: str) -> None:
+def validate_scenario(scenario: str, configuration: str, no_dotnet_build: bool) -> None:
     python_result = parse_json_output(
         f"Python scenario {scenario}",
         run([sys.executable, str(PYTHON_REFERENCE), scenario]),
     )
-    csharp_result = parse_json_output(
-        f"C# scenario {scenario}",
-        run(
-            [
-                "dotnet",
-                "run",
-                "--project",
-                str(EXAMPLE_PROJECT),
-                "--configuration",
-                configuration,
-                "--no-build",
-                "--",
-                "parity",
-                scenario,
-            ]
-        ),
-    )
+    dotnet_args = [
+        "dotnet",
+        "run",
+        "--project",
+        str(EXAMPLE_PROJECT),
+        "--configuration",
+        configuration,
+    ]
+    if no_dotnet_build:
+        dotnet_args.append("--no-build")
+    dotnet_args.extend(["--", "parity", scenario])
+    csharp_result = parse_json_output(f"C# scenario {scenario}", run(dotnet_args))
     if python_result != csharp_result:
         raise AssertionError(
             f"Scenario '{scenario}' did not match.\n"
@@ -83,7 +99,7 @@ def main() -> int:
     scenarios = tuple(args.scenario or SCENARIOS)
     for iteration in range(1, args.iterations + 1):
         for scenario in scenarios:
-            validate_scenario(scenario, args.configuration)
+            validate_scenario(scenario, args.configuration, no_dotnet_build=True)
         print(f"iteration {iteration}: validated {', '.join(scenarios)}")
 
     return 0

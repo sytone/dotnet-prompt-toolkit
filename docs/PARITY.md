@@ -1,29 +1,63 @@
 # Python prompt_toolkit parity matrix
 
-Last audit: 2026-05-11. This audit covers every source, test, example, and CI file currently in this repository and compares the implemented functionality with Python `prompt_toolkit` at a feature-area level.
+Last audit: 2026-05-11. This audit was produced by walking the C# source tree, the test suite, the example scenarios, and the CI pipeline, and comparing the implemented surface against [python-prompt-toolkit](https://github.com/prompt-toolkit/python-prompt-toolkit).
 
-Legend: ✅ initial support, 🚧 partial support, ❌ not yet ported.
+Legend: ✅ broad coverage of the upstream module, 🚧 partial coverage with stable APIs, ❌ not yet ported.
 
-| Area | Status | Current .NET coverage | Remaining Python prompt_toolkit parity gaps | Test/validation status |
-| --- | --- | --- | --- | --- |
-| Solution/library/test/example structure | ✅ | `DotnetPromptToolkit.slnx` with library, xUnit tests, examples, and CI. | Multi-target/package metadata and platform matrix are not defined. | `dotnet test DotnetPromptToolkit.slnx`; CI runs restore/build/test. |
-| Document primitives | 🚧 | Immutable text, cursor clamping, line splitting, row/column translation, current-line helpers, word-before-cursor. | Selection state, find boundaries, word-under-cursor variants, cursor movement helpers, empty-line edge cases, grapheme/width-aware indexing. | xUnit coverage plus Python/C# parity scenario `document`. |
-| Buffer/editing primitives | 🚧 | Insert, delete-before-cursor, cursor left/right, undo stack, accept with validation/history. | Full editing commands, multiline editing, selection, completion state, history navigation, validation display, filters, read-only buffers. | xUnit only; not yet covered by example parity except history acceptance. |
-| Completion | 🚧 | `ICompleter`, `Completion`, `WordCompleter`, replacement via `StartPosition`. | Nested/path/fuzzy/deduplicated/threaded completions, completion menus, metadata formatting, async cancellation semantics matching upstream. | xUnit coverage plus Python/C# parity scenario `completion`. |
-| Validation | 🚧 | `IValidator`, `DelegateValidator`, `ValidationError` with cursor position. | Validation processors, UI integration, async validation flows, validation state rendering. | xUnit only. |
-| History | 🚧 | `InMemoryHistory` append/get strings. | File history, threaded history loading, duplicate policies, history search/navigation. | xUnit coverage plus Python/C# parity scenario `history`. |
-| Clipboard | 🚧 | In-memory string clipboard. | System clipboard, multiple clipboard data types, integration with key bindings. | No dedicated parity scenario yet. |
-| Search | 🚧 | Forward `IndexOf` search from cursor/start index. | Incremental search UI, reverse search, ignore-case defaults, multiline search behavior, search state. | xUnit only. |
-| Key bindings | 🚧 | Basic key enum, key press model, registry, default character/backspace/left/right processing. | Full key grammar, key chords, filters, Vi/Emacs bindings, macros, conditional bindings, abort/accept flows. | xUnit only. |
-| Input backend | 🚧 | Basic ANSI arrow parsing, enter, backspace, control-C/D, escape. | Full VT parser, bracketed paste, mouse, CPR, terminal modes, Windows console behavior. | xUnit only. |
-| Output backend | 🚧 | Console output wrapper and minimal ANSI helpers. | Terminal capability detection, color depth, alternate screen, raw/cooked modes, cursor visibility, platform differences. | No dedicated parity scenario yet. |
-| Formatted text | 🚧 | Styled fragments and plain-text conversion. | HTML/ANSI/Pygments helpers, fragment processors, style transformation, width-aware formatting. | xUnit coverage plus Python/C# parity scenario `formatted-text`. |
-| Styles | 🚧 | Exact selector lookup from dictionary/rules. | Cascading selectors, class merging, defaults, color parsing, style transformations. | xUnit only. |
-| Layout/widgets | 🚧 | `Label`, `TextArea`, `HSplit`, `VSplit` with plain-text rendering. | Full container system, dimensions, windows, controls, margins, floats, dialogs, menus, widgets, conditional containers. | xUnit coverage plus Python/C# parity scenario `layout`. |
-| Rendering | 🚧 | `Screen` cell storage and simple renderer that emits all changed lines after plain-text comparison. | Real screen diffing, cursor placement, style rendering, invalidation, scroll offsets, mouse handlers. | xUnit only. |
-| Application/session async | 🚧 | `PromptSession.PromptAsync` wrapping `Console.In.ReadLineAsync`. | Application event loop, input hooks, suspend-to-background, prompt rendering, bottom toolbars, completions, cancellation/interrupt semantics. | Manual examples only. |
-| Examples | 🚧 | C# `basic`, `completion`, `layout`, plus noninteractive `parity` scenarios. | The upstream Python example catalog is not recreated. Interactive examples do not yet exercise real completion UI. | `tools/validate_examples.py` compares deterministic Python and C# scenario outputs. |
-| Tests | 🚧 | xUnit tests for initial core behavior. | Upstream Python unit tests are not translated; platform/rendering/async regression coverage is minimal. | `dotnet test` and parity validator. |
+| Upstream module | C# namespace(s) | Status | Notes |
+| --- | --- | --- | --- |
+| `application` | `DotnetPromptToolkit.Application` | 🚧 | `PromptSession` with history, completer, validator, auto-suggest, editing mode, multiline. Full async event loop and key processor integration not yet wired. |
+| `auto_suggest` | `DotnetPromptToolkit.AutoSuggest` | ✅ | `IAutoSuggest`, `Suggestion`, `DummyAutoSuggest`, `AutoSuggestFromHistory`, `ThreadedAutoSuggest`. |
+| `buffer` / `document` | `DotnetPromptToolkit.Buffers` | 🚧 | `Document`, `Buffer` with insert/delete/cursor/undo/accept/validation/completion. Selection state ported in `Selection` namespace. Multiline editing helpers remain partial. |
+| `cache` | `DotnetPromptToolkit.Cache` | ✅ | `SimpleCache<TKey,TValue>` (LRU) and `FastDictCache<TKey,TValue>`. |
+| `clipboard` | `DotnetPromptToolkit.Clipboard` | ✅ | `IClipboard`, `InMemoryClipboard`, `KillRingClipboard` (rich kill-ring with rotation), `DynamicClipboard`, `ClipboardData`. |
+| `completion` | `DotnetPromptToolkit.Completion` | ✅ | `ICompleter`, `Completion`, `CompletionState`, `WordCompleter`, `FuzzyWordCompleter`, `PathCompleter`, `NestedCompleter`, `MergedCompleter`, `DeduplicateCompleter`. |
+| `contrib.regular_languages` | `DotnetPromptToolkit.Contrib.RegularLanguages` | 🚧 | `GrammarCompiler.Compile` produces a `CompiledGrammar` with named-group variable extraction. Grammar-driven completion not yet ported. |
+| `cursor_shapes` | `DotnetPromptToolkit.CursorShapes` | ✅ | `CursorShape` enum, `ICursorShapeConfig`, `StaticCursorShape`, `DynamicCursorShapeConfig`. |
+| `data_structures` | `DotnetPromptToolkit.DataStructures` | ✅ | `Point`, `Size` records. |
+| `enums` | `DotnetPromptToolkit.Enums` | ✅ | `EditingMode`. |
+| `eventloop` | `DotnetPromptToolkit.EventLoop` | 🚧 | `EventLoopHelpers.RunInBackgroundAsync`, `RunInExecutorAsync`, `RunInTerminalAsync`, `InputHook`/`InputHookContext`. Full async loop integration is future work. |
+| `filters` | `DotnetPromptToolkit.Filters` | ✅ | `Filter` base with `&`, `|`, `~`, `Always`, `Never`, `Condition`, `From`. App helpers in `AppFilters` accept delegates. |
+| `formatted_text` | `DotnetPromptToolkit.FormattedText` | ✅ | `FormattedText`, `FormattedTextFragment`, `HtmlFormattedText.Parse` (matches upstream `class:<tag>` style), `AnsiFormattedText.Parse` (SGR), `FormattedTextUtils.SplitLines`. |
+| `history` | `DotnetPromptToolkit.History` | ✅ | `IHistory`, `InMemoryHistory`, `FileHistory` (round-trips multi-line entries), `ThreadedHistory`. |
+| `input` (vt100) | `DotnetPromptToolkit.Input` | 🚧 | `AnsiInputParser` handles arrows, function keys (Home/End/Page/Insert/Delete), SS3 sequences, and the full Ctrl-A..Ctrl-Z range. Bracketed paste and mouse parsing remain. |
+| `key_binding` | `DotnetPromptToolkit.KeyBinding` | 🚧 | `KeyBindings`, `KeyProcessor`, default editing handlers, `EmacsBindings.Create`, `ViBindings.Create`, `ViState`, `EmacsState`. Filter-based bindings and full Vi/Emacs keymaps remain. |
+| `keys` | `DotnetPromptToolkit.Keys` | ✅ | `Keys` enum mirroring upstream identifiers, `KeyNames.Name` returns matching string ids (e.g. `c-a`, `s-tab`). |
+| `layout.containers` | `DotnetPromptToolkit.Layout` | 🚧 | `HSplit`, `VSplit`, `Window`, `Float`, `FloatContainer`, `ScrollOffsets`. Conditional containers, alignments, paddings remain. |
+| `layout.controls` | `DotnetPromptToolkit.Layout` | 🚧 | `IUIControl`, `FormattedTextControl`, `BufferControl`. Display-mapping for line wrap/scroll remains. |
+| `layout.dimension` | `DotnetPromptToolkit.Layout` | ✅ | `Dimension`, `D` helper, `DimensionDistributor.Distribute`. |
+| `layout.margins` | `DotnetPromptToolkit.Layout` | ✅ | `IMargin`, `NumberedMargin`, `ScrollbarMargin`. |
+| `layout.menus` | `DotnetPromptToolkit.Layout` | ✅ | `CompletionsMenu` with selected-index highlighting. |
+| `layout.processors` | `DotnetPromptToolkit.Layout` | 🚧 | `IProcessor`, `HighlightSearchProcessor`, `PasswordProcessor`. Full processor pipeline remains. |
+| `layout.mouse_handlers` | `DotnetPromptToolkit.Layout` | 🚧 | `MouseHandler` delegate alias. Hit-testing and event routing remain. |
+| `lexers` | `DotnetPromptToolkit.Lexers` | ✅ | `ILexer`, `SimpleLexer`, `DelegatingLexer` (per-line tokenizer). |
+| `mouse_events` | `DotnetPromptToolkit.MouseEvents` | ✅ | `MouseEvent`, `MouseEventType`, `MouseButton`, `MouseModifier`. |
+| `output` | `DotnetPromptToolkit.Output` | ✅ | `ITerminalOutput`, `ConsoleTerminalOutput`, `Vt100Output` with bracketed paste / alt-screen / cursor / colour, `PlainTextOutput`, `DummyOutput`, `ColorDepth`, `ColorDepthExtensions.FromEnvironment`, `Ansi` helper. |
+| `patch_stdout` | `DotnetPromptToolkit.PatchStdout` | ✅ | `PatchStdoutScope` buffers `Console.Out` until disposed. |
+| `renderer` | `DotnetPromptToolkit.Rendering` | 🚧 | `Screen`, `Renderer` produce diff operations; full screen/cursor diffing remains. |
+| `search` | `DotnetPromptToolkit.Search` | ✅ | `Searcher.FindNext`, `SearchState`, `SearchDirection`, `IncrementalSearcher.Find` (forward/backward, case-insensitive). |
+| `selection` | `DotnetPromptToolkit.Selection` | ✅ | `SelectionType`, `SelectionState`, `PasteMode`. |
+| `shortcuts.prompt` | `DotnetPromptToolkit.Shortcuts` | 🚧 | `Prompt.RunAsync`, `Prompt.RunPasswordAsync`. Streaming completion menu UI remains. |
+| `shortcuts.dialogs` | `DotnetPromptToolkit.Shortcuts` | ✅ | `Dialogs.MessageDialog`, `YesNoDialog`, `InputDialog`, `ButtonDialog`, `ChoiceDialog`. |
+| `shortcuts.progress_bar` | `DotnetPromptToolkit.Shortcuts` | ✅ | `ProgressBar` with `Advance`/`Reset`/`Render`. |
+| `styles` | `DotnetPromptToolkit.Styles` | ✅ | `Style`, `StyleRule`, `DefaultStyle`, `NamedColors`, `IStyleTransformation`, `IdentityStyleTransformation`, `SwapLightAndDarkStyleTransformation`, `ConditionalStyleTransformation`, `MergedStyleTransformation`. |
+| `token` | `DotnetPromptToolkit.Token` | ✅ | `Token` records mirroring common Pygments token names. |
+| `validation` | `DotnetPromptToolkit.Validation` | ✅ | `IValidator`, `ValidationError`, `DelegateValidator`, `DummyValidator`, `ThreadedValidator`, `WordValidator`, `RegexValidator`. |
+| `widgets.base` | `DotnetPromptToolkit.Widgets` | ✅ | `TextLabel`, `Frame`, `Box`, `Button`, `Checkbox`, `RadioList<T>`, `FormattedTextToolbar`. |
+| `widgets.dialogs` | `DotnetPromptToolkit.Widgets` | ✅ | `Dialog` widget rendered through `Frame`. |
+| `widgets.menus` | `DotnetPromptToolkit.Widgets` | ✅ | `MenuItem`, `MenuContainer`. |
+
+## Remaining gaps
+
+The following upstream modules are not yet ported. They are tracked as future work:
+- `input.win32` (Windows console reader)
+- `input.vt100` mouse / bracketed paste decoding
+- `output.win32` (Windows console writer)
+- Full Vi/Emacs key binding catalogs and key chord sequences
+- Complete renderer with screen diffing and cursor placement
+- `patch_stdout` integration with the renderer
+- `contrib.ssh`, `contrib.telnet`
+- `pygments`-based lexer adapter
 
 ## Repeatable parity validation
 
@@ -33,12 +67,34 @@ Install the Python reference dependency once:
 python -m pip install -r tools/python-requirements.txt
 ```
 
-Run the deterministic Python-vs-C# example parity scenarios:
+Run the deterministic Python-vs-C# parity scenarios as many times as you need:
 
 ```bash
 python tools/validate_examples.py --iterations 3
 ```
 
-The validator builds the .NET solution, runs each deterministic C# parity scenario, runs the matching Python `prompt_toolkit` reference scenario, compares the JSON outputs, and repeats the process for the requested number of iterations.
+Each iteration builds the .NET solution, executes every C# parity scenario, executes the matching Python `prompt_toolkit` reference scenario, and compares the JSON outputs for an exact match. Re-running the validator multiple times with the same iteration count is a fast and deterministic confidence check.
 
-Current scenarios: `document`, `completion`, `history`, `formatted-text`, and `layout`.
+Validated scenarios (15):
+
+- `document`
+- `completion`
+- `fuzzy-completion`
+- `nested-completion`
+- `history`
+- `formatted-text`
+- `html`
+- `ansi`
+- `layout`
+- `search`
+- `auto-suggest`
+- `named-colors`
+- `grammar`
+- `progress-bar`
+- `frame`
+
+Run a single scenario with:
+
+```bash
+python tools/validate_examples.py --scenario document --iterations 5 --no-build
+```

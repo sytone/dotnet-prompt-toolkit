@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples/DotnetPromptToolkit.Examples/DotnetPromptToolkit.Examples.csproj" />
+  </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/EchoSample/EchoSample.csproj" />
   </Folder>
